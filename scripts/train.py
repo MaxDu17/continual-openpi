@@ -31,6 +31,25 @@ import openpi.training.weight_loaders as _weight_loaders
 from openpi.training.data_loader import create_deterministic_buffer, create_torch_data_loader_replay_buffer, MixedDataLoader
 
 
+# Monkey-patch to fix 'List' feature type error in old datasets
+try:
+    import datasets.features.features as features
+
+    _OLD_GENERATE_FROM_DICT = features.generate_from_dict
+
+    def _new_generate_from_dict(obj):
+        if isinstance(obj, dict) and obj.get("_type") == "List":
+            obj["_type"] = "Sequence"
+        return _OLD_GENERATE_FROM_DICT(obj)
+
+    features.generate_from_dict = _new_generate_from_dict
+    print("successfully patched list error")
+except (ImportError, AttributeError):
+    # If datasets or the function doesn't exist, do nothing.
+    pass
+# End of monkey-patch
+
+
 def init_logging():
     """Custom logging format for better readability."""
     level_mapping = {"DEBUG": "D", "INFO": "I", "WARNING": "W", "ERROR": "E", "CRITICAL": "C"}
@@ -368,6 +387,7 @@ def main(config: _config.TrainConfig):
     n_tasks = config.n_tasks
 
     logging.info("Creating per-task dataloaders")
+    # task loader is what brings the sequence task up 
     task_loaders = [
         _data_loader.create_data_loader_sequential(
             config,
@@ -419,13 +439,20 @@ def main(config: _config.TrainConfig):
 
     logging.info(f"Using task order: {order}")
 
+    # to dynamically assign, run create_deterministic_buffer at the start of every task
+    # before doing this, make your data filter! 
     dataset_lst, buffer_lst = create_deterministic_buffer(
         config,
         n_tasks=n_tasks,
         shuffle=True,
         sharding=jax.sharding.NamedSharding(mesh, jax.sharding.PartitionSpec(sharding.DATA_AXIS)),
-        task_order=order,
+        task_order=order, # this is how you determine the task order of loading 
     )
+    # 
+    # ^^^ preset_buffers is how you select the subsets 
+    # ^^^^ this function creates the dataset torch object and the sampling buffer for each tasks, 
+    # created in the order of loading 
+
 
     if resuming:
         if config.cl == "er":
@@ -480,19 +507,23 @@ def main(config: _config.TrainConfig):
 
     # --- Sequential training loop ---
     def _run_task(task_idx):
+        # this is the task to run on 
         nonlocal train_state, replay_loader
 
         loader = task_loaders[task_idx]
         logging.info(f"=== Learning task {task_idx} / {n_tasks - 1} ===")
 
         if config.cl == "er":
-            if config.no_resampling:
+            # this is where the ER is implemented...
+            if config.no_resampling: # this doesn't do balanced batches; it just includes the current task in the sampling 
                 mixed_loader = replay_loader if task_idx > 0 else loader
             else:
+                # this concatenates the training batch and ER batch 
                 mixed_loader = MixedDataLoader(loader.data_config(), loader, replay_loader) if task_idx > 0 else loader
         else:
             mixed_loader = loader
 
+        # this is the actual training loop 
         train_state = make_single_task_loop(
             config, mesh, train_rng,
             train_state, train_state_sharding,
@@ -502,10 +533,13 @@ def main(config: _config.TrainConfig):
         )
 
         if config.cl == "er":
+            # this saves the current buffer into a replay buffer for ER 
+            # -> To inject my method, I'd need to actaully do this at the start of the task 
+            # -> and also modify the create_torch_data_loader_replay_buffer situation 
             dataset_lst_final = (
-                dataset_lst[:task_idx + 1]
+                dataset_lst[:task_idx + 1] # basically creating everything up to this point 
                 if not config.no_resampling
-                else dataset_lst[:task_idx + 2]
+                else dataset_lst[:task_idx + 2] # creating including the new task 
             )
             replay_loader = create_torch_data_loader_replay_buffer(
                 dataset_lst_final,
@@ -521,10 +555,10 @@ def main(config: _config.TrainConfig):
                 skip_norm_stats=False,
             )
 
-    if config.learn_one_task_idx > -1:
+    if config.learn_one_task_idx > -1: # this is how you learn a single task 
         _run_task(config.learn_one_task_idx)
     else:
-        for task_idx in range(prev_task_idx + 1, n_tasks):
+        for task_idx in range(prev_task_idx + 1, n_tasks): # this is the main CL loop 
             _run_task(task_idx)
 
     logging.info("Waiting for checkpoint manager to finish")
@@ -533,3 +567,7 @@ def main(config: _config.TrainConfig):
 
 if __name__ == "__main__":
     main(_config.cli())
+
+# remaining questions: 
+# - how is the config created? 
+# - 

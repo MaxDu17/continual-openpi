@@ -16,6 +16,24 @@ import openpi.training.data_loader as _data_loader
 import openpi.transforms as transforms
 
 
+# Monkey-patch to fix 'List' feature type error in old datasets
+try:
+    import datasets.features.features as features
+
+    _OLD_GENERATE_FROM_DICT = features.generate_from_dict
+
+    def _new_generate_from_dict(obj):
+        if isinstance(obj, dict) and obj.get("_type") == "List":
+            obj["_type"] = "Sequence"
+        return _OLD_GENERATE_FROM_DICT(obj)
+
+    features.generate_from_dict = _new_generate_from_dict
+    print("successfully patched list error")
+except (ImportError, AttributeError):
+    # If datasets or the function doesn't exist, do nothing.
+    pass
+# End of monkey-patch
+
 def iter_task_data_configs(cfg: _config.TrainConfig):
     """
     Yields (task_idx, DataConfig) pairs.
@@ -45,7 +63,7 @@ def create_torch_dataloader(
     max_frames: int | None = None,
 ) -> tuple[_data_loader.Dataset, int]:
     if data_config.repo_id is None:
-        raise ValueError("Data config must have a repo_id")
+        raise ValueError("Data config must have a repo_id") 
     dataset = _data_loader.create_torch_dataset(data_config, action_horizon, model_config)
     dataset = _data_loader.TransformedDataset(
         dataset,

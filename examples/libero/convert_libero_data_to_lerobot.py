@@ -14,7 +14,8 @@ Note: to run the script, you need to install tensorflow_datasets:
 `uv pip install tensorflow tensorflow_datasets`
 
 You can download the raw Libero datasets from https://huggingface.co/datasets/openvla/modified_libero_rlds
-The resulting dataset will get saved to the $LEROBOT_HOME directory.
+The resulting dataset is written under `--output-dir` if set, otherwise under the LeRobot home
+directory (see `LEROBOT_HOME` / `HF_LEROBOT_HOME`).
 Running this conversion script will take approximately 30 minutes.
 """
 
@@ -49,9 +50,9 @@ def main(data_dir: str, *, push_to_hub: bool = False, idx: int = 0, output_dir: 
         if task_slug not in datasets:
             repo_id = f"{REPO_NAME}-{RAW_DATASET_NAMES[idx]}/{task_slug}"
             out_dir = pathlib.Path(lerobot_home) / repo_id
-            out_dir.mkdir(parents=True, exist_ok=True)
             datasets[task_slug] = LeRobotDataset.create(
                 repo_id=repo_id,
+                root=out_dir,
                 robot_type="panda",
                 fps=10,
                 features={

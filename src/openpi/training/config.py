@@ -351,7 +351,7 @@ class LeRobotLiberoSeqDataConfig(DataConfigFactory):
     comments below.
     """
 
-    repo_ids: tuple[str, ...] = dataclasses.field(default_factory=tuple)
+    repo_ids: tuple[str, ...] = dataclasses.field(default_factory=tuple) # this adds an additional field to the constructor 
 
     @override
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig, task_id: int | None = None) -> DataConfig:
@@ -697,7 +697,7 @@ class TrainConfig:
     # Base directory for config assets (e.g., norm stats).
     assets_base_dir: str = "./assets"
     # Base directory for checkpoints.
-    checkpoint_base_dir: str = "./checkpoints"
+    checkpoint_base_dir: str = "./runs"
 
     # Random seed that will be used by random generators during training.
     seed: int = 42
@@ -744,7 +744,7 @@ class TrainConfig:
     double_batch_start: bool = False
     starting_from_task_idx: int = -1 # for debugging
     no_resampling: bool = False 
-    cl_order: str = None
+    cl_order: str = None # the order of loading thet asks 
     
     ################################
     ####### Physics of Lifelong VLA 
@@ -875,7 +875,7 @@ def _make_seq_train_config(
             model=model_cfg,
             data=LeRobotLiberoSeqDataConfig(
                 # repo_id isn't used by LeRobotLiberoSeqDataConfig; it takes repo_ids + task_id at runtime
-                repo_id=f"huihanl/{base_name.replace('_sequential','').replace('-','_')}",  # just a placeholder
+                repo_id=f"libero_lerobot/{base_name.replace('_sequential','').replace('-','_')}",  # just a placeholder
                 repo_ids=repo_ids,
                 base_config=DataConfig(prompt_from_task=True),
                 assets=AssetsConfig(
@@ -901,7 +901,7 @@ def _make_seq_train_config(
                         model=model_cfg,
                         data=LeRobotLiberoSeqDataConfig(
                             # repo_id isn't used by LeRobotLiberoSeqDataConfig; it takes repo_ids + task_id at runtime
-                            repo_id=f"huihanl/{base_name.replace('_sequential','').replace('-','_')}",  # just a placeholder
+                            repo_id=f"libero_lerobot/{base_name.replace('_sequential','').replace('-','_')}",  # just a placeholder
                             repo_ids=repo_ids,
                             base_config=DataConfig(prompt_from_task=True),
                             assets=AssetsConfig(
@@ -923,7 +923,7 @@ def _make_seq_train_config(
         model=model_cfg,
         data=LeRobotLiberoSeqDataConfig(
             # repo_id isn't used by LeRobotLiberoSeqDataConfig; it takes repo_ids + task_id at runtime
-            repo_id=f"huihanl/{base_name.replace('_sequential','').replace('-','_')}",  # just a placeholder
+            repo_id=f"libero_lerobot/{base_name.replace('_sequential','').replace('-','_')}",  # just a placeholder
             repo_ids=repo_ids,
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1026,7 +1026,7 @@ def _make_multitask_to_i_config(
         name=name,
         model=model_cfg,
         data=LeRobotLiberoSeqDataConfig(
-            repo_id=f"huihanl/{base_name.replace('-','_')}_no_noops",  # placeholder, not used
+            repo_id=f"libero_lerobot/{base_name.replace('-','_')}_no_noops",  # placeholder, not used
             repo_ids=repo_ids,
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1204,56 +1204,58 @@ def _robocasa_seq_variants_for_benchmark(
 
 # ========= Libero sequential task lists (from your existing configs) =========
 
+BASE_ABSOLUTE_DATA_PATH = "/store/real/maxjdu/repos/LiberoContinualLearning/datasets/libero_lerobot"
+
 _LIBERO_GOAL_SEQ = (
-    "huihanl/libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
-    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
-    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
-    "huihanl/libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
-    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
-    "huihanl/libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
-    "huihanl/libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
-    "huihanl/libero-libero_goal_no_noops/turn_on_the_stove",
-    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
-    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/turn_on_the_stove",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
 )
 
 _LIBERO_SPATIAL_SEQ = (
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
 )
 
 _LIBERO_OBJECT_SEQ = (
-    "huihanl/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
-    "huihanl/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
 )
 
 _LIBERO_10_SEQ = (
-    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+    BASE_ABSOLUTE_DATA_PATH + "/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
 )
 
 
@@ -1423,11 +1425,11 @@ _CONFIGS = [
         # you see many warnings being thrown during training.
         model=pi0_fast.Pi0FASTConfig(action_dim=7, action_horizon=10, max_token_len=180),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero",
+            repo_id="libero_lerobot/libero",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero",
-                asset_id="huihanl/libero",
+                asset_id="libero_lerobot/libero",
                 ),
             ),
         # Note that we load the pi0-FAST base model checkpoint here.
@@ -1442,11 +1444,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero",
+            repo_id="libero_lerobot/libero",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero",
-                asset_id="huihanl/libero",
+                asset_id="libero_lerobot/libero",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -1468,11 +1470,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",
+            repo_id="libero_lerobot/libero-libero_10_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_10",
-                asset_id="huihanl/libero-libero_10_no_noops",
+                asset_id="libero_lerobot/libero-libero_10_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -1495,11 +1497,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",
+            repo_id="libero_lerobot/libero-libero_10_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_10",
-                asset_id="huihanl/libero-libero_10_no_noops",
+                asset_id="libero_lerobot/libero-libero_10_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("checkpoints/pi0_fast_libero_low_mem_finetune-libero_object/my_experiment/8000/params"),
@@ -1521,11 +1523,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_goal_no_noops",
+            repo_id="libero-libero_goal_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_goal",
-                asset_id="huihanl/libero-libero_goal_no_noops",
+                asset_id="libero-libero_goal_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -1547,11 +1549,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops",
+            repo_id="libero_lerobot/libero-libero_object_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_object",
-                asset_id="huihanl/libero-libero_object_no_noops",
+                asset_id="libero_lerobot/libero-libero_object_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -1573,11 +1575,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+            repo_id="libero_lerobot/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_object-single_task",
-                asset_id="huihanl/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+                asset_id="libero_lerobot/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -1596,11 +1598,11 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/mt/libero-libero_object_no_noops",
+            repo_id="libero_lerobot/mt/libero-libero_object_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_libero_low_mem_finetune-libero_object-multi_task",
-                asset_id="huihanl/libero-libero_object_no_noops",
+                asset_id="libero_lerobot/libero-libero_object_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
@@ -1622,11 +1624,11 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/mt/libero-libero_10_no_noops",
+            repo_id="libero_lerobot/mt/libero-libero_10_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_libero_low_mem_finetune-libero_10-multi_task",
-                asset_id="huihanl/libero-libero_10_no_noops",
+                asset_id="libero_lerobot/libero-libero_10_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
@@ -1648,11 +1650,11 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/mt/libero-libero_spatial_no_noops",
+            repo_id="libero_lerobot/mt/libero-libero_spatial_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_libero_low_mem_finetune-libero_spatial-multi_task",
-                asset_id="huihanl/libero-libero_spatial_no_noops",
+                asset_id="libero_lerobot/libero-libero_spatial_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
@@ -1674,11 +1676,11 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/mt/libero-libero_goal_no_noops",
+            repo_id="libero_lerobot/mt/libero-libero_goal_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_libero_low_mem_finetune-libero_goal-multi_task",
-                asset_id="huihanl/libero-libero_goal_no_noops",
+                asset_id="libero-libero_goal_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
@@ -1701,18 +1703,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_object_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1743,18 +1745,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero_lerobot/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1784,18 +1786,18 @@ _CONFIGS = [
         model=pi0_l2.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", loss_type="l2"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero_lerobot/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1824,18 +1826,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1865,18 +1867,18 @@ _CONFIGS = [
         model=pi0_l2.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", loss_type="l2"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1906,18 +1908,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_micro_800k", action_expert_variant="gemma_pico_300k", img_module="resnet"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1948,18 +1950,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_goal_no_noops",# not used
+            repo_id="libero-libero_goal_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
-                    "huihanl/libero-libero_goal_no_noops/turn_on_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
-                    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
+                    "libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
+                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
+                    "libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
+                    "libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
+                    "libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
+                    "libero-libero_goal_no_noops/turn_on_the_stove",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
+                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -1989,11 +1991,11 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+            repo_id="libero_lerobot/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_libero_low_mem_finetune-libero_object-single_task",
-                asset_id="huihanl/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+                asset_id="libero_lerobot/libero-libero_object_no_noops-pick_up_the_alphabet_soup_and_place_it_in_the_basket",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
@@ -2017,11 +2019,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops-put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+            repo_id="libero_lerobot/libero-libero_10_no_noops-put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_10-single_task",
-                asset_id="huihanl/libero-libero_10_no_noops-put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                asset_id="libero_lerobot/libero-libero_10_no_noops-put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -2043,11 +2045,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops",
+            repo_id="libero_lerobot/libero-libero_object_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_object",
-                asset_id="huihanl/libero-libero_object_no_noops",
+                asset_id="libero_lerobot/libero-libero_object_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("checkpoints/pi0_fast_libero_low_mem_finetune-libero_10/my_experiment/8000/params"),
@@ -2069,11 +2071,11 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero_low_mem_finetune-libero_spatial",
-                asset_id="huihanl/libero-libero_spatial_no_noops",
+                asset_id="libero_lerobot/libero-libero_spatial_no_noops",
                 ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_fast_base/params"),
@@ -2199,18 +2201,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_object_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2241,18 +2243,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2282,18 +2284,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_goal_no_noops",# not used
+            repo_id="libero-libero_goal_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
-                    "huihanl/libero-libero_goal_no_noops/turn_on_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
-                    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
+                    "libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
+                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
+                    "libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
+                    "libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
+                    "libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
+                    "libero-libero_goal_no_noops/turn_on_the_stove",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
+                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2323,18 +2325,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2365,18 +2367,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2407,101 +2409,101 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_90_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_90_no_noops",# not used
             repo_ids=(
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE10_close_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE10_close_the_top_drawer_of_the_cabinet_and_put_the_black_bowl_on_top_of_it",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_black_bowl_in_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_butter_at_the_back_in_the_top_drawer_of_the_cabinet_and_close_it",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_butter_at_the_front_in_the_top_drawer_of_the_cabinet_and_close_it",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_chocolate_pudding_in_the_top_drawer_of_the_cabinet_and_close_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE10_close_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE10_close_the_top_drawer_of_the_cabinet_and_put_the_black_bowl_on_top_of_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_black_bowl_in_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_butter_at_the_back_in_the_top_drawer_of_the_cabinet_and_close_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_butter_at_the_front_in_the_top_drawer_of_the_cabinet_and_close_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE10_put_the_chocolate_pudding_in_the_top_drawer_of_the_cabinet_and_close_it",
                 
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE1_open_the_bottom_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE1_open_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE1_open_the_top_drawer_of_the_cabinet_and_put_the_bowl_in_it",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE1_put_the_black_bowl_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE1_put_the_black_bowl_on_top_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_open_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_black_bowl_at_the_back_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_black_bowl_at_the_front_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_middle_black_bowl_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_middle_black_bowl_on_top_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_stack_the_black_bowl_at_the_front_on_the_black_bowl_in_the_middle",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE2_stack_the_middle_black_bowl_on_the_back_black_bowl",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE3_put_the_frying_pan_on_the_stove",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE3_put_the_moka_pot_on_the_stove",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE3_turn_on_the_stove",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE4_close_the_bottom_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE4_close_the_bottom_drawer_of_the_cabinet_and_open_the_top_drawer",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_black_bowl_on_top_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_wine_bottle_in_the_bottom_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_wine_bottle_on_the_wine_rack",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE5_close_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_black_bowl_in_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_black_bowl_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_black_bowl_on_top_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_ketchup_in_the_top_drawer_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE6_close_the_microwave",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE6_put_the_yellow_and_white_mug_to_the_front_of_the_white_mug",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE7_open_the_microwave",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE7_put_the_white_bowl_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE7_put_the_white_bowl_to_the_right_of_the_plate",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE8_turn_off_the_stove",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_frying_pan_on_the_cabinet_shelf",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_frying_pan_on_top_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_frying_pan_under_the_cabinet_shelf",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_white_bowl_on_top_of_the_cabinet",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE9_turn_on_the_stove",
-                "huihanl/libero-libero_90_no_noops/KITCHEN_SCENE9_turn_on_the_stove_and_put_the_frying_pan_on_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE1_open_the_bottom_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE1_open_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE1_open_the_top_drawer_of_the_cabinet_and_put_the_bowl_in_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE1_put_the_black_bowl_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE1_put_the_black_bowl_on_top_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_open_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_black_bowl_at_the_back_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_black_bowl_at_the_front_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_middle_black_bowl_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_put_the_middle_black_bowl_on_top_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_stack_the_black_bowl_at_the_front_on_the_black_bowl_in_the_middle",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE2_stack_the_middle_black_bowl_on_the_back_black_bowl",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE3_put_the_frying_pan_on_the_stove",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE3_put_the_moka_pot_on_the_stove",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE3_turn_on_the_stove",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE4_close_the_bottom_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE4_close_the_bottom_drawer_of_the_cabinet_and_open_the_top_drawer",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_black_bowl_on_top_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_wine_bottle_in_the_bottom_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE4_put_the_wine_bottle_on_the_wine_rack",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE5_close_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_black_bowl_in_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_black_bowl_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_black_bowl_on_top_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE5_put_the_ketchup_in_the_top_drawer_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE6_close_the_microwave",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE6_put_the_yellow_and_white_mug_to_the_front_of_the_white_mug",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE7_open_the_microwave",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE7_put_the_white_bowl_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE7_put_the_white_bowl_to_the_right_of_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE8_turn_off_the_stove",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_frying_pan_on_the_cabinet_shelf",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_frying_pan_on_top_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_frying_pan_under_the_cabinet_shelf",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE9_put_the_white_bowl_on_top_of_the_cabinet",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE9_turn_on_the_stove",
+                "libero_lerobot/libero-libero_90_no_noops/KITCHEN_SCENE9_turn_on_the_stove_and_put_the_frying_pan_on_it",
 
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_alphabet_soup_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_cream_cheese_box_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_ketchup_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_tomato_sauce_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_alphabet_soup_and_put_it_in_the_basket",
-                #"huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_butter_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_milk_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_orange_juice_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_tomato_sauce_and_put_it_in_the_basket",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_alphabet_soup_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_butter_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_cream_cheese_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_ketchup_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_tomato_sauce_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_pick_up_the_black_bowl_on_the_left_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_pick_up_the_chocolate_pudding_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_pick_up_the_salad_dressing_and_put_it_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_stack_the_left_bowl_on_the_right_bowl_and_place_them_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_stack_the_right_bowl_on_the_left_bowl_and_place_them_in_the_tray",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_red_mug_on_the_left_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_red_mug_on_the_right_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_white_mug_on_the_left_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_yellow_and_white_mug_on_the_right_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_chocolate_pudding_to_the_left_of_the_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_red_mug_on_the_plate",
-                "huihanl/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_white_mug_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_alphabet_soup_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_cream_cheese_box_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_ketchup_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE1_pick_up_the_tomato_sauce_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_alphabet_soup_and_put_it_in_the_basket",
+                #"libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_butter_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_milk_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_orange_juice_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE2_pick_up_the_tomato_sauce_and_put_it_in_the_basket",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_alphabet_soup_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_butter_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_cream_cheese_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_ketchup_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE3_pick_up_the_tomato_sauce_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_pick_up_the_black_bowl_on_the_left_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_pick_up_the_chocolate_pudding_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_pick_up_the_salad_dressing_and_put_it_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_stack_the_left_bowl_on_the_right_bowl_and_place_them_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE4_stack_the_right_bowl_on_the_left_bowl_and_place_them_in_the_tray",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_red_mug_on_the_left_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_red_mug_on_the_right_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_white_mug_on_the_left_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE5_put_the_yellow_and_white_mug_on_the_right_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_chocolate_pudding_to_the_left_of_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_red_mug_on_the_plate",
+                "libero_lerobot/libero-libero_90_no_noops/LIVING_ROOM_SCENE6_put_the_white_mug_on_the_plate",
                 
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_front_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_left_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_right_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_yellow_and_white_mug_and_place_it_to_the_right_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_front_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_left_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_right_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_book_and_place_it_in_the_front_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_book_and_place_it_in_the_left_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_book_and_place_it_in_the_right_compartment_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_red_mug_and_place_it_to_the_right_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_white_mug_and_place_it_to_the_right_of_the_caddy",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_in_the_middle_and_place_it_on_the_cabinet_shelf",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_on_the_left_and_place_it_on_top_of_the_shelf",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_on_the_right_and_place_it_on_the_cabinet_shelf",
-                "huihanl/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_on_the_right_and_place_it_under_the_cabinet_shelf",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_front_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_left_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_book_and_place_it_in_the_right_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE1_pick_up_the_yellow_and_white_mug_and_place_it_to_the_right_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_front_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_left_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE2_pick_up_the_book_and_place_it_in_the_right_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_book_and_place_it_in_the_front_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_book_and_place_it_in_the_left_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_book_and_place_it_in_the_right_compartment_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_red_mug_and_place_it_to_the_right_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE3_pick_up_the_white_mug_and_place_it_to_the_right_of_the_caddy",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_in_the_middle_and_place_it_on_the_cabinet_shelf",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_on_the_left_and_place_it_on_top_of_the_shelf",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_on_the_right_and_place_it_on_the_cabinet_shelf",
+                "libero_lerobot/libero-libero_90_no_noops/STUDY_SCENE4_pick_up_the_book_on_the_right_and_place_it_under_the_cabinet_shelf",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2536,18 +2538,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_goal_no_noops",# not used
+            repo_id="libero-libero_goal_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
-                    "huihanl/libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
-                    "huihanl/libero-libero_goal_no_noops/turn_on_the_stove",
-                    "huihanl/libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
-                    "huihanl/libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
+                    "libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
+                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
+                    "libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
+                    "libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
+                    "libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
+                    "libero-libero_goal_no_noops/turn_on_the_stove",
+                    "libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
+                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2580,18 +2582,18 @@ _CONFIGS = [
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_object_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2624,18 +2626,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero_lerobot/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2667,18 +2669,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero_lerobot/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2710,18 +2712,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero_lerobot/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2753,18 +2755,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2796,18 +2798,18 @@ _CONFIGS = [
         # Here is an example of loading a pi0 model for LoRA fine-tuning.
         model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", loss_type="l2"),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_spatial_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_spatial_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
-                    "huihanl/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate",
+                    "libero_lerobot/libero-libero_spatial_no_noops/pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2840,18 +2842,18 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_10_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_10_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
-                    "huihanl/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
-                    "huihanl/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
-                    "huihanl/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
-                    "huihanl/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
+                    "libero_lerobot/libero-libero_10_no_noops/pick_up_the_book_and_place_it_in_the_back_compartment_of_the_caddy",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_moka_pots_on_the_stove",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_left_plate_and_put_the_yellow_and_white_mug_on_the_right_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_white_mug_on_the_plate_and_put_the_chocolate_pudding_to_the_right_of_the_plate",
+                    "libero_lerobot/libero-libero_10_no_noops/put_the_yellow_and_white_mug_in_the_microwave_and_close_it",
+                    "libero_lerobot/libero-libero_10_no_noops/turn_on_the_stove_and_put_the_moka_pot_on_it",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2881,18 +2883,18 @@ _CONFIGS = [
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ),
         data=LeRobotLiberoSeqDataConfig(
-            repo_id="huihanl/libero-libero_object_no_noops",# not used
+            repo_id="libero_lerobot/libero-libero_object_no_noops",# not used
             repo_ids=(
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
-                    "huihanl/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_alphabet_soup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_bbq_sauce_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_butter_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_chocolate_pudding_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_cream_cheese_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_ketchup_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_milk_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_orange_juice_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_salad_dressing_and_place_it_in_the_basket",
+                    "libero_lerobot/libero-libero_object_no_noops/pick_up_the_tomato_sauce_and_place_it_in_the_basket",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(

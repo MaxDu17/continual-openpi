@@ -12,6 +12,9 @@ import glob, os, re, subprocess, time, signal, sys, pathlib
 # Configuration
 BASE_DIR = sys.argv[1]
 POLICY_CONFIG = BASE_DIR.split("/")[-2]
+# TODO: THIS IS NOT ROBUST 
+assert len(BASE_DIR.split("/")[-1]) > 0, "Don't put a '/' at the end of your folder!" 
+
 TASK_SUITE = sys.argv[2]
 
 PORT = 8000
@@ -29,7 +32,7 @@ def discover_checkpoints():
         if step_name.isdigit() and step_name.endswith("9999"):
             idx_files = glob.glob(os.path.join(d, "task_idx_*.txt"))
             if not idx_files:
-                print(f"[skip] {d} – no task_idx_*.txt", file=sys.stderr)
+                print(f"[skip] {d} – no task_idx_*.txt") # , file=sys.stderr)
                 continue
             task_idx = int(re.search(r"task_idx_(\d+)\.txt", idx_files[0]).group(1))
             ckpts.append((d, task_idx, int(step_name)))
@@ -49,7 +52,6 @@ def launch_server(ckpt_dir, task_idx):
         "--policy.config", POLICY_CONFIG,
         "--policy.dir", ckpt_dir,
     ]
-
     return subprocess.Popen(cmd, env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
@@ -66,6 +68,16 @@ def run_eval(task_idx, ckpt_dir):
         "--args.base_dir", ckpt_dir,
     ]
     subprocess.run(cmd, env=env, check=True)
+
+    # print(env)
+    # cmd = [
+    #     "python", "-c", "import sys; print(f'Python version: {sys.version}'); print(f'Executable: {sys.executable}')"
+    # ]
+    # cmd = [
+    #     "python", "-c", "import sys; print(f'Python version: {sys.version}'); print(f'Executable: {sys.executable}')"
+    # ]
+    # subprocess.run(cmd, env=env, check=True)
+    # import robosuite.utils.transform_utils as T
 
 
 def main():

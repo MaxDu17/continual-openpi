@@ -1,6 +1,7 @@
 from collections.abc import Iterator, Sequence
 import multiprocessing
 import os
+from socket import IP_DROP_MEMBERSHIP
 import typing
 from typing import Protocol, SupportsIndex, TypeVar
 
@@ -146,8 +147,8 @@ def create_torch_dataset(
         raise ValueError("Repo ID is not set. Cannot create dataset.")
     if repo_id == "fake":
         return FakeDataset(model_config, num_samples=1024)
-
     dataset_meta = lerobot_dataset.LeRobotDatasetMetadata(repo_id)
+
     dataset = lerobot_dataset.LeRobotDataset(
         data_config.repo_id,
         delta_timestamps={
@@ -312,6 +313,7 @@ def create_data_loader_multitask(
     
     return replay_loader
 
+# this gives a standard data loader 
 def create_data_loader_sequential(
     config: _config.TrainConfig,
     *,
@@ -432,7 +434,7 @@ def create_torch_data_loader_replay_buffer(
     num_batches: int | None = None,
     num_workers: int = 0,
     seed: int = 0,
-    fixed_buffer_indices: Sequence[int] | None = None,
+    fixed_buffer_indices: Sequence[int] | None = None, # this could be a way of setting the selection values! 
 ) -> DataLoader[tuple[_model.Observation, _model.Actions]]:
     """Create a data loader for training.
 
