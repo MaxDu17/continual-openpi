@@ -37,6 +37,26 @@ export $HF_LEROBOT_HOME=/store/real/maxjdu/repos/LiberoContinualLearning/dataset
 #   --overwrite \
 #   --fsdp-devices=1
 
+## parallelization attmpet 
+source examples/libero/.venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
+python examples/libero/main_parallelized.py \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --task-suite-name libero_spatial \
+  --eval-upto-task 0 \
+  --num-trials-per-task 2 \
+  --num-parallel-envs 1 \
+  --num-steps-wait 0 \
+  --replan-steps 1 \
+  --base-dir runs/parallel_smoke_test_numba_disabled
+
+  # --sequence \
+
+exit 
+
+# python examples/libero/dummy_policy_server.py --port 8765
+
 # This script evaluates it 
 
 # this needs to be run on the outer directory.
