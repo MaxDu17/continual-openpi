@@ -44,7 +44,6 @@ class Args:
         with open(self.result_out_path, "rb") as f:
             return pickle.load(f)
 
-
 def _get_max_steps(task_suite_name: str) -> int:
     steps = {
         "libero_spatial": 220,

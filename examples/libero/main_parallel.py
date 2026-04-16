@@ -10,7 +10,6 @@ import math
 import multiprocessing
 import os
 import pathlib
-from typing import Tuple
 
 import imageio
 import yaml
@@ -108,19 +107,29 @@ class Args:
     #################################################################################################################
     # LIBERO environment-specific parameters
     #################################################################################################################
-    task_suite_name: str = "libero_object"  # Task suites to evaluate (required).
+    task_suite_name: str = "libero_object"  # Options: libero_spatial, libero_object, libero_goal, libero_10, libero_90
+    eval_upto_task: int = 0  # Evaluate tasks 0..eval_upto_task inclusive (checkpoint trained through this task id)
     num_steps_wait: int = 10  # Number of steps to wait for objects to stabilize in sim
     num_trials_per_task: int = 50  # Number of rollouts per task
-    max_tasks: int = 0  # If set (> 0), only run the first N tasks in the suite
 
     #################################################################################################################
     # Utils
     #################################################################################################################
-    out_path: str = "data/libero/runs"  # Base directory; each run saves to a timestamped subfolder
+    out_path: str = "data/libero/runs"  # Run logs / stats; each run uses a timestamped subfolder under this path
+    base_dir: str = ""  # If set, out_path is resolved under this directory (same semantics as main.py)
     run_id: str = ""  # Optional label appended to the run folder name (e.g. "pi05_baseline")
     num_workers: int = 20  # Number of parallel worker processes
 
     seed: int = 7  # Random Seed (for reproducibility)
+
+
+def _configure_worker_logging() -> None:
+    """Spawned workers never run ``if __name__ == "__main__"``; enable INFO logs there too.
+
+    ``WebsocketClientPolicy`` logs wait/retry messages at INFO; without this, workers look hung
+    while they sleep in ``_wait_for_server`` (same loop as in the main process, but silent).
+    """
+    logging.basicConfig(level=logging.INFO)
 
 
 def run_task(task_args: tuple) -> dict:
@@ -260,16 +269,17 @@ def eval_suite(args: Args, task_suite_name: str, run_dir: pathlib.Path) -> dict:
 
     (run_dir / "videos").mkdir(parents=True, exist_ok=True)
 
-    # Pass task_suite_name through args for use in worker processes
-    suite_args = dataclasses.replace(args, task_suite_names=(task_suite_name,))
-
-    num_tasks = min(num_tasks_in_suite, args.max_tasks) if args.max_tasks > 0 else num_tasks_in_suite
-    task_args = [(task_id, suite_args, max_steps, run_dir) for task_id in range(num_tasks)]
+    assert 0 <= args.eval_upto_task < num_tasks_in_suite, (
+        f"eval_upto_task must be in [0, {num_tasks_in_suite}), got {args.eval_upto_task}"
+    )
+    num_tasks = args.eval_upto_task + 1
+    task_args = [(task_id, args, max_steps, run_dir) for task_id in range(num_tasks)]
 
     num_workers = min(args.num_workers, num_tasks)
     logging.info(f"Running {num_tasks} tasks with {num_workers} workers")
 
-    with multiprocessing.get_context("spawn").Pool(processes=num_workers) as pool:
+    ctx = multiprocessing.get_context("spawn")
+    with ctx.Pool(processes=num_workers, initializer=_configure_worker_logging) as pool:
         per_task_stats = list(
             tqdm.tqdm(pool.imap_unordered(run_task, task_args), total=num_tasks, desc=task_suite_name)
         )
@@ -299,21 +309,14 @@ def eval_suite(args: Args, task_suite_name: str, run_dir: pathlib.Path) -> dict:
 def eval_libero(args: Args) -> None:
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     folder_name = f"{timestamp}_{args.run_id}" if args.run_id else timestamp
-    run_dir = pathlib.Path(args.out_path) / folder_name
+    base = pathlib.Path(args.base_dir) if args.base_dir else None
+    runs_root = (base / args.out_path) if base else pathlib.Path(args.out_path)
+    run_dir = runs_root / folder_name
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"\n{'='*60}\nRun directory: {run_dir }\n{'='*60}\n")
 
-    all_stats = []
-    for task_suite_name in args.task_suite_names:
-        suite_run_dir = run_dir / task_suite_name
-        stats = eval_suite(args, task_suite_name, suite_run_dir)
-        all_stats.append(stats)
-
-    # Log overall summary across all suites
-    if len(all_stats) > 1:
-        total_episodes = sum(s["total_episodes"] for s in all_stats)
-        total_successes = sum(s["total_successes"] for s in all_stats)
-        logging.info(f"Overall success rate: {total_successes / total_episodes:.2%} across {len(all_stats)} suites")
+    suite_run_dir = run_dir / args.task_suite_name
+    eval_suite(args, args.task_suite_name, suite_run_dir)
 
 
 def _get_libero_env(task, resolution, seed):
