@@ -20,6 +20,8 @@ from openpi_client import image_tools
 from openpi_client import websocket_client_policy as _websocket_client_policy
 import tqdm
 import tyro
+import time
+import torch
 
 LIBERO_DUMMY_ACTION = np.array([0.0] * 6 + [-1.0], dtype=np.float32)
 LIBERO_ENV_RESOLUTION = 256
@@ -45,6 +47,11 @@ class Args:
     mujoco_gl: str = "osmesa"
     render_gpu_device_id: int = -1
 
+    # Initial states on disk (same layout as libero Benchmark.get_task_init_states: torch.load of .pruned_init)
+    # If empty, loads: get_libero_path("init_states") / task.problem_folder / task.init_states_file
+    init_states_path: str = ""
+    init_states_folder: str = ""
+
     # Output paths
     video_out_path: str = "videos"
     result_out_path: str = "result_summary.pkl"
@@ -60,7 +67,7 @@ class Args:
     debug_step_summary: bool = False
     debug_summary_interval: int = 25
 
-    # Future work
+    # Batched websocket inference (dummy server implements this; real OpenPI server is separate work)
     use_batched_inference: bool = False
 
     def load_result_summary(self) -> dict:
@@ -105,6 +112,32 @@ def _get_max_steps(task_suite_name: str) -> int:
     if task_suite_name not in steps:
         raise ValueError(f"Unknown task suite: {task_suite_name}")
     return steps[task_suite_name]
+
+
+def _resolve_init_states_file(task, args: Args) -> pathlib.Path:
+    """Path to the torch-saved init state tensor for this task (see libero benchmark)."""
+    if args.init_states_path:
+        p = pathlib.Path(args.init_states_path)
+        assert p.is_file(), f"init_states_path is not a file: {p}"
+        return p
+    root = pathlib.Path(args.init_states_folder) if args.init_states_folder else pathlib.Path(get_libero_path("init_states"))
+    p = root / task.problem_folder / task.init_states_file
+    assert p.is_file(), f"Init states file not found: {p}"
+    return p
+
+
+def _load_initial_states_from_file(task, args: Args) -> np.ndarray:
+    """Load all mujoco init states for a task; shape [N, ...]. Same source as Benchmark.get_task_init_states."""
+    path = _resolve_init_states_file(task, args)
+    raw = torch.load(str(path))
+    arr = np.asarray(raw)
+    assert arr.ndim >= 1, f"Expected init states with ndim >= 1, got shape {arr.shape} from {path}"
+    n_envs_in_file = arr.shape[0]
+    assert args.num_trials_per_task <= n_envs_in_file, (
+        f"num_trials_per_task={args.num_trials_per_task} exceeds number of init states in {path} (N={n_envs_in_file})."
+    )
+    logging.info("Loaded %s init states from %s", n_envs_in_file, path)
+    return arr
 
 
 def _get_libero_env_args(task, resolution: int, render_gpu_device_id: int) -> Tuple[Dict[str, Any], str]:
@@ -214,6 +247,23 @@ def _infer_action_chunk(
     return action_chunk[:replan_steps]
 
 
+def _infer_action_chunk_batch(
+    client: _websocket_client_policy.WebsocketClientPolicy,
+    elements: List[Dict[str, Any]],
+    replan_steps: int,
+) -> np.ndarray:
+    assert len(elements) >= 1
+    batch = client.infer_batch(elements)
+    actions = np.asarray(batch["actions"], dtype=np.float32)
+    assert actions.ndim == 3, f"Expected batched actions [B, T, A], got {actions.shape}"
+    assert actions.shape[0] == len(elements), f"B mismatch: got actions {actions.shape[0]} vs {len(elements)} elements"
+    assert actions.shape[2] == 7, f"Expected action dimension 7, got {actions.shape}"
+    assert actions.shape[1] >= replan_steps, (
+        f"We want to replan every {replan_steps} steps, but policy only predicts {actions.shape[1]} steps."
+    )
+    return actions[:, :replan_steps, :]
+
+
 def _episode_video_name(task_description: str, episode_idx: int, success: bool) -> str:
     suffix = "success" if success else "failure"
     task_segment = task_description.replace(" ", "_")
@@ -260,24 +310,36 @@ def _initialize_slots(
     initial_states: np.ndarray,
     episode_indices: List[int],
     args: Args,
+    *,
+    reset_workers: bool,
 ) -> List[EpisodeSlot]:
     active_ids = list(range(len(episode_indices)))
-    if args.debug_worker_lifecycle:
-        logging.info("Resetting active slots for task=%s episode_indices=%s", task_id, episode_indices)
-    try:
-        env.reset(id=active_ids)
-    except Exception as exc:
-        print(exc)
-        raise RuntimeError(
-            "Failed to create/reset parallel LIBERO environments. "
-            "This often means offscreen EGL context allocation failed for the requested "
-            f"num_parallel_envs={len(active_ids)} on render_gpu_device_id={args.render_gpu_device_id}. "
-            "Try a smaller num_parallel_envs, a different render_gpu_device_id, or debug with num_parallel_envs=1."
-        ) from exc
-
+    print(episode_indices)
+    n_states = initial_states.shape[0]
+    for idx in episode_indices:
+        assert 0 <= idx < n_states, f"episode index {idx} out of range for init states [0, {n_states})"
     init_batch = np.asarray([initial_states[idx] for idx in episode_indices])
+    if args.debug_worker_lifecycle:
+        logging.info(
+            "Init slots task=%s episode_indices=%s reset_workers=%s",
+            task_id,
+            episode_indices,
+            reset_workers,
+        )
+    if reset_workers:
+        try:
+            env.reset(id=active_ids)
+        except Exception as exc:
+            raise RuntimeError(
+                "Failed to create/reset parallel LIBERO environments. "
+                "This often means offscreen EGL context allocation failed for the requested "
+                f"num_parallel_envs={len(active_ids)} on render_gpu_device_id={args.render_gpu_device_id}. "
+                "Try a smaller num_parallel_envs, a different render_gpu_device_id, or debug with num_parallel_envs=1."
+            ) from exc
+
     try:
         obs_batch = env.set_init_state(init_batch, id=active_ids)
+        print("Resetted the enviornments based on the supplied state!")
     except Exception as exc:
         raise RuntimeError(
             "Failed while assigning initial states to parallel LIBERO environments. "
@@ -332,37 +394,46 @@ def _run_parallel_episode_chunk(
     logged_shapes = False
     active_ids = [slot.slot_idx for slot in slots if not slot.done]
     while active_ids:
-        ready_ids = []
-        for slot_idx in active_ids:
-            slot = slots[slot_idx]
-            assert slot.obs is not None
-
-            if not slot.action_plan:
+        infer_ids = [slot_idx for slot_idx in active_ids if not slots[slot_idx].action_plan]
+        if infer_ids:
+            elements: List[Dict[str, Any]] = []
+            for slot_idx in infer_ids:
+                slot = slots[slot_idx]
+                assert slot.obs is not None
                 img, wrist_img = _preprocess_images(slot.obs, args.resize_size)
                 slot.replay_images.append(img)
                 element = _make_policy_input(slot.obs, img, wrist_img, slot.task_description)
                 if args.debug_rollout_shapes and not logged_shapes:
                     _log_obs_shapes_once(slot.obs, element, task_id, slot_idx)
                     logged_shapes = True
+                elements.append(element)
+
+            try:
                 if args.use_batched_inference:
-                    raise NotImplementedError("Batched inference is intentionally left for future work.")
-                try:
-                    action_chunk = _infer_action_chunk(client, element, args.replan_steps)
-                except Exception as exc:
+                    batch_actions = _infer_action_chunk_batch(client, elements, args.replan_steps)
+                    for row, slot_idx in enumerate(infer_ids):
+                        slots[slot_idx].action_plan.extend(batch_actions[row])
+                else:
+                    for element, slot_idx in zip(elements, infer_ids):
+                        action_chunk = _infer_action_chunk(client, element, args.replan_steps)
+                        slots[slot_idx].action_plan.extend(action_chunk)
+            except Exception as exc:
+                for slot_idx in infer_ids:
+                    slot = slots[slot_idx]
                     slot.done = True
                     slot.success = False
                     slot.error = f"infer failed: {exc}"
-                    logging.exception(
-                        "Inference failed for task=%s slot=%s episode=%s",
-                        task_id,
-                        slot.slot_idx,
-                        slot.episode_idx,
-                    )
-                    continue
-                slot.action_plan.extend(action_chunk)
+                logging.exception(
+                    "Inference failed for task=%s slots=%s",
+                    task_id,
+                    infer_ids,
+                )
 
-            ready_ids.append(slot_idx)
+        active_ids = [slot.slot_idx for slot in slots if not slot.done]
+        if not active_ids:
+            break
 
+        ready_ids = [slot_idx for slot_idx in active_ids if slots[slot_idx].action_plan]
         if not ready_ids:
             break
 
@@ -370,7 +441,7 @@ def _run_parallel_episode_chunk(
         assert action_batch.shape[1] == 7, f"Expected per-step action shape [B, 7], got {action_batch.shape}"
 
         try:
-            obs_batch, reward_batch, done_batch, info_batch = env.step(action_batch, id=ready_ids)
+            obs_batch, reward_batch, done_batch, _info = env.step(action_batch, id=ready_ids)
         except Exception as exc:
             raise RuntimeError(f"Vector env step failed for task={task_id} active_slots={ready_ids}") from exc
 
@@ -435,9 +506,21 @@ def _run_task_parallel(
     if not episode_indices:
         return results
 
-    for start in tqdm.tqdm(range(0, len(episode_indices), args.num_parallel_envs), leave=False, desc=f"Task {task_id} chunks"):
+    chunk_starts = list(range(0, len(episode_indices), args.num_parallel_envs))
+    for chunk_idx, start in enumerate(
+        tqdm.tqdm(chunk_starts, leave=False, desc=f"Task {task_id} chunks")
+    ):
         batch_episode_indices = episode_indices[start : start + args.num_parallel_envs]
-        slots = _initialize_slots(env, task_id, task_description, initial_states, batch_episode_indices, args)
+        reset_workers = chunk_idx == 0
+        slots = _initialize_slots(
+            env,
+            task_id,
+            task_description,
+            initial_states,
+            batch_episode_indices,
+            args,
+            reset_workers=reset_workers,
+        )
         results.extend(_run_parallel_episode_chunk(env, client, slots, task_id, max_steps, args))
     return results
 
@@ -451,6 +534,15 @@ def _resolve_output_paths(args: Args) -> Tuple[pathlib.Path, pathlib.Path]:
     return video_dir, result_path
 
 
+def _assert_batch_inference_supported(client: _websocket_client_policy.WebsocketClientPolicy) -> None:
+    meta = client.get_server_metadata()
+    assert meta.get("supports_batch_infer") is True, (
+        "Batched inference was requested, but the connected server metadata does not advertise "
+        f"'supports_batch_infer'. Metadata: {meta!r}. "
+        "Use examples/libero/dummy_policy_server.py for now, or implement batching in the real server."
+    )
+
+
 def eval_libero_parallel(args: Args) -> None:
     np.random.seed(args.seed)
     assert args.num_parallel_envs >= 1, "num_parallel_envs must be >= 1"
@@ -458,6 +550,8 @@ def eval_libero_parallel(args: Args) -> None:
     video_dir, _ = _resolve_output_paths(args)
     max_steps = _get_max_steps(args.task_suite_name)
     client = _websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
+    if args.use_batched_inference:
+        _assert_batch_inference_supported(client)
 
     benchmark_dict = benchmark.get_benchmark_dict()
     task_suite = benchmark_dict[args.task_suite_name]()
@@ -466,8 +560,9 @@ def eval_libero_parallel(args: Args) -> None:
 
     total_episodes, total_successes = 0, 0
     for task_id in tqdm.tqdm(range(num_tasks_in_suite), desc="Tasks"):
+        beg = time.time()
         task = task_suite.get_task(task_id)
-        initial_states = task_suite.get_task_init_states(task_id)
+        initial_states = _load_initial_states_from_file(task, args)
         env, task_description = _create_vector_env(task, args)
         try:
             episode_indices = list(range(args.num_trials_per_task))
@@ -483,6 +578,7 @@ def eval_libero_parallel(args: Args) -> None:
             )
         finally:
             env.close()
+        print(f"Time taken for this environment is {time.time() - beg}")
 
         task_successes = 0
         for result in task_results:
@@ -523,6 +619,8 @@ def eval_libero_sequence_parallel(args: Args) -> None:
     video_dir, result_path = _resolve_output_paths(args)
     max_steps = _get_max_steps(args.task_suite_name)
     client = _websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
+    if args.use_batched_inference:
+        _assert_batch_inference_supported(client)
 
     task_suite = benchmark.get_benchmark_dict()[args.task_suite_name]()
     n_total = task_suite.n_tasks
@@ -545,7 +643,7 @@ def eval_libero_sequence_parallel(args: Args) -> None:
     total_episodes, total_successes = 0, 0
     for task_id in tqdm.tqdm(range(row + 1), desc="Tasks"):
         task = task_suite.get_task(task_id)
-        initial_states = task_suite.get_task_init_states(task_id)
+        initial_states = _load_initial_states_from_file(task, args)
         env, task_description = _create_vector_env(task, args)
         try:
             episode_indices = list(range(args.num_trials_per_task))

@@ -61,7 +61,7 @@ def run_eval(task_idx, ckpt_dir):
 
     env = os.environ.copy()
     cmd = [
-        "python", "examples/libero/main.py",
+        "python", "examples/libero/main_parallel.py",
         "--args.task_suite_name", TASK_SUITE,
         "--args.eval_upto_task", str(task_idx),
         "--args.num_trials_per_task", str(TRIALS_PER_TASK),

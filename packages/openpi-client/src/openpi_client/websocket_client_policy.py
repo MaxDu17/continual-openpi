@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 import websockets.sync.client
@@ -47,6 +47,26 @@ class WebsocketClientPolicy(_base_policy.BasePolicy):
         response = self._ws.recv()
         if isinstance(response, str):
             # we're expecting bytes; if the server sends a string, it's an error.
+            raise RuntimeError(f"Error in inference server:\n{response}")
+        return msgpack_numpy.unpackb(response)
+
+    def infer_batch(self, observations: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Send a batch inference request over the same websocket connection.
+
+        Protocol (dummy server and future real servers):
+        - Client sends msgpack object: {"type": "batch_infer", "observations": [dict, ...]}
+        - Server returns msgpack object containing at least:
+          - "actions": ndarray [B, T, A]
+
+        Real OpenPI servers may not implement this yet; call only when the server advertises support.
+        """
+        assert isinstance(observations, list), f"Expected list of observation dicts, got {type(observations)}"
+        assert len(observations) >= 1, "infer_batch requires at least one observation"
+        payload = {"type": "batch_infer", "observations": observations}
+        data = self._packer.pack(payload)
+        self._ws.send(data)
+        response = self._ws.recv()
+        if isinstance(response, str):
             raise RuntimeError(f"Error in inference server:\n{response}")
         return msgpack_numpy.unpackb(response)
 

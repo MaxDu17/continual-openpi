@@ -38,22 +38,30 @@ export $HF_LEROBOT_HOME=/store/real/maxjdu/repos/LiberoContinualLearning/dataset
 #   --fsdp-devices=1
 
 ## parallelization attmpet 
-source examples/libero/.venv/bin/activate
-export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
-python examples/libero/main_parallelized.py \
-  --host 127.0.0.1 \
-  --port 8765 \
-  --task-suite-name libero_spatial \
-  --eval-upto-task 0 \
-  --num-trials-per-task 2 \
-  --num-parallel-envs 1 \
-  --num-steps-wait 0 \
-  --replan-steps 1 \
-  --base-dir runs/parallel_smoke_test_numba_disabled
+# source examples/libero/.venv/bin/activate
+# export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
+# # export MUJOCO_GL=glx
+# MUJOCO_GL=egl python examples/libero/main_parallelized.py \
+#   --host 127.0.0.1 \
+#   --port 8765 \
+#   --task-suite-name libero_goal \
+#   --eval-upto-task 0 \
+#   --num-trials-per-task 10 \
+#   --num-parallel-envs 5 \
+#   --num-steps-wait 0 \
+#   --replan-steps 8 \
+#   --base-dir runs/parallel_smoke_test
 
+  # --use-batched-inference \
+
+
+# 436 seconds with 25 parallel environments 
+# 3600 seconds with 1 seqeutnail envirnments 
+
+# there is an explicit feailure when we try to grab more than one environment 
   # --sequence \
 
-exit 
+# exit 
 
 # python examples/libero/dummy_policy_server.py --port 8765
 
@@ -73,7 +81,7 @@ export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
 
 # uv run scripts/serve_policy.py --port 8000 --task_idx 0 policy:checkpoint --policy.config pi0_libero_low_mem_finetune-libero_goal_sequential --policy.dir /store/real/maxjdu/repos/continual-openpi/runs/pi0_libero_low_mem_finetune-libero_goal_sequential/my_libero_experiment/9999
 
-CUDA_VISIBLE_DEVICES=3 XLA_PYTHON_CLIENT_MEM_FRACTION=0.1 python examples/libero/eval_continual.py \
+CUDA_VISIBLE_DEVICES=4 XLA_PYTHON_CLIENT_MEM_FRACTION=0.1 python examples/libero/eval_continual.py \
   /store/real/maxjdu/repos/continual-openpi/runs/pi0_libero_low_mem_finetune-libero_goal_sequential/my_libero_experiment \
   libero_goal 
 

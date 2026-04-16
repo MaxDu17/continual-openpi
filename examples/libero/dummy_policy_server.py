@@ -1,12 +1,12 @@
 import asyncio
 import dataclasses
 import logging
+import time
 
 import numpy as np
 from openpi_client import msgpack_numpy
 import tyro
 import websockets.asyncio.server as _server
-import time 
 
 @dataclasses.dataclass
 class Args:
@@ -31,6 +31,24 @@ def _infer(obs: dict, action_horizon: int, action_value: float) -> dict:
     print("Inferring (fake), ", time.time())
     return {"actions": actions}
 
+# this is just dummy server so we aren't actually doing the batching 
+def _infer_batch(observations: list, action_horizon: int, action_value: float) -> dict:
+    assert isinstance(observations, list), f"Batch observations must be a list, got {type(observations)}"
+    assert len(observations) >= 1, "Batch must be non-empty"
+    actions_list = []
+    infer_started = time.monotonic()
+    for obs in observations:
+        assert isinstance(obs, dict), f"Each batch element must be a dict, got {type(obs)}"
+        out = _infer(obs, action_horizon, action_value)
+        actions_list.append(out["actions"])
+    actions = np.stack(actions_list, axis=0)
+    infer_s = time.monotonic() - infer_started
+    return {
+        "actions": actions,
+        "batch_size": int(actions.shape[0]),
+        "server_timing": {"infer_ms": infer_s * 1000.0},
+    }
+
 
 async def _handler(
     websocket: _server.ServerConnection,
@@ -39,10 +57,28 @@ async def _handler(
     action_value: float,
 ) -> None:
     packer = msgpack_numpy.Packer()
-    await websocket.send(packer.pack({"server_type": "dummy_policy_server"}))
+    await websocket.send(
+        packer.pack(
+            {
+                "server_type": "dummy_policy_server",
+                "supports_batch_infer": True,
+                "batch_protocol": "msgpack:{type: batch_infer, observations: [dict, ...]}",
+            }
+        )
+    )
     while True:
-        obs = msgpack_numpy.unpackb(await websocket.recv())
-        action = _infer(obs, action_horizon, action_value)
+        msg = msgpack_numpy.unpackb(await websocket.recv())
+        if isinstance(msg, dict) and msg.get("type") == "batch_infer":
+            observations = msg["observations"]
+            action = _infer_batch(observations, action_horizon, action_value)
+            await websocket.send(packer.pack(action))
+            continue
+        if isinstance(msg, list):
+            action = _infer_batch(msg, action_horizon, action_value)
+            await websocket.send(packer.pack(action))
+            continue
+        assert isinstance(msg, dict), f"Expected dict or list message, got {type(msg)}"
+        action = _infer(msg, action_horizon, action_value)
         await websocket.send(packer.pack(action))
 
 
