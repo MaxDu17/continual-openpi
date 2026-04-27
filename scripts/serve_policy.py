@@ -1,7 +1,9 @@
 import dataclasses
 import enum
 import logging
+import signal
 import socket
+import sys
 
 import tyro
 
@@ -9,6 +11,36 @@ from openpi.policies import policy as _policy
 from openpi.policies import policy_config as _policy_config
 from openpi.serving import websocket_policy_server
 from openpi.training import config as _config
+
+
+class _BlueFormatter(logging.Formatter):
+    _BLUE = "\033[94m"
+    _RESET = "\033[0m"
+
+    def format(self, record: logging.LogRecord) -> str:
+        return f"{self._BLUE}{super().format(record)}{self._RESET}"
+
+
+def _configure_blue_logging() -> None:
+    logging.basicConfig(level=logging.INFO, force=True)
+    root = logging.getLogger()
+    assert root.handlers, "Expected at least one logging handler after basicConfig"
+    formatter = _BlueFormatter("%(levelname)s:%(name)s:%(message)s")
+    for handler in root.handlers:
+        handler.setFormatter(formatter)
+
+
+def _install_signal_handlers() -> None:
+    def _handler(signum: int, _frame) -> None:
+        signame = signal.Signals(signum).name
+        logging.info("[Server] Received signal %s (%d)", signame, signum)
+        if signum == signal.SIGINT:
+            raise KeyboardInterrupt
+        if signum == signal.SIGTERM:
+            raise SystemExit(0)
+
+    signal.signal(signal.SIGINT, _handler)
+    signal.signal(signal.SIGTERM, _handler)
 
 
 class EnvMode(enum.Enum):
@@ -112,7 +144,7 @@ def main(args: Args) -> None:
 
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
-    logging.info("Creating server (host: %s, ip: %s)", hostname, local_ip)
+    logging.info("[serve policy] Creating server (host: %s, ip: %s)", hostname, local_ip)
 
     server = websocket_policy_server.WebsocketPolicyServer(
         policy=policy,
@@ -120,9 +152,17 @@ def main(args: Args) -> None:
         port=args.port,
         metadata=policy_metadata,
     )
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    finally:
+        logging.info("[Server] Server loop exited; process is shutting down")
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, force=True)
-    main(tyro.cli(Args))
+    _configure_blue_logging()
+    _install_signal_handlers()
+    try:
+        main(tyro.cli(Args))
+    except KeyboardInterrupt:
+        logging.info("[Server] Shutdown complete after SIGINT")
+        sys.exit(0)

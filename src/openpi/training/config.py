@@ -1296,6 +1296,7 @@ _ROBOCASA_DOOR_SEQ: tuple[str, ...] = (
 )
 
 # Use `get_config` if you need to get a config by name in your code.
+# THIS IS WHERE IT ALL STARTS: you would use this to run the training configs 
 _CONFIGS = [
     #
     # Inference Aloha configs.
@@ -1429,7 +1430,7 @@ _CONFIGS = [
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
                 assets_dir="./assets/pi0_fast_libero",
-                asset_id="libero_lerobot/libero",
+                asset_id="physical-intelligence/libero",
                 ),
             ),
         # Note that we load the pi0-FAST base model checkpoint here.
@@ -2287,15 +2288,15 @@ _CONFIGS = [
             repo_id="libero-libero_goal_no_noops",# not used
             repo_ids=(
                     "libero-libero_goal_no_noops/open_the_middle_drawer_of_the_cabinet",
-                    "libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
-                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
-                    "libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
-                    "libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
-                    "libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
-                    "libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
-                    "libero-libero_goal_no_noops/turn_on_the_stove",
-                    "libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
-                    "libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
+                    # "libero-libero_goal_no_noops/put_the_bowl_on_the_stove",
+                    # "libero-libero_goal_no_noops/put_the_wine_bottle_on_top_of_the_cabinet",
+                    # "libero-libero_goal_no_noops/open_the_top_drawer_and_put_the_bowl_inside",
+                    # "libero-libero_goal_no_noops/put_the_bowl_on_top_of_the_cabinet",
+                    # "libero-libero_goal_no_noops/push_the_plate_to_the_front_of_the_stove",
+                    # "libero-libero_goal_no_noops/put_the_cream_cheese_in_the_bowl",
+                    # "libero-libero_goal_no_noops/turn_on_the_stove",
+                    # "libero-libero_goal_no_noops/put_the_bowl_on_the_plate",
+                    # "libero-libero_goal_no_noops/put_the_wine_bottle_on_the_rack",
                     ),
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
@@ -2309,8 +2310,9 @@ _CONFIGS = [
         # for the given model config for LoRA finetuning. Just make sure it matches the model config
         # you chose above.
         
-        num_train_steps=100000,
-        steps_per_task=10000,
+        # num_train_steps=100000,
+        num_train_steps=30000,
+        steps_per_task=30000, #10000,
         save_interval=2000,
         
         freeze_filter=pi0.Pi0Config(

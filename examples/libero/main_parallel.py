@@ -26,6 +26,26 @@ import tyro
 
 LIBERO_DUMMY_ACTION = [0.0] * 6 + [-1.0]
 LIBERO_ENV_RESOLUTION = 256  # resolution used to render training data
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+
+
+class _YellowFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        return f"{YELLOW}{super().format(record)}{RESET}"
+
+
+def _configure_yellow_logging() -> None:
+    logging.basicConfig(level=logging.INFO, force=True)
+    root = logging.getLogger()
+    assert root.handlers, "Expected logging handlers after basicConfig"
+    formatter = _YellowFormatter("%(levelname)s:%(name)s:%(message)s")
+    for handler in root.handlers:
+        handler.setFormatter(formatter)
+
+
+def _yellow_print(message: str) -> None:
+    print(f"{YELLOW}{message}{RESET}")
 
 MAX_STEPS = {
     "libero_spatial": 220,  # longest training demo has 193 steps
@@ -77,6 +97,7 @@ def _create_benchmark_class(split_name):
 
 
 def _discover_and_register_benchmarks():
+    print("[Main Parallel] Dicovering and registering benchmarks")
     """Auto-discover split directories in the libero datasets folder and register them."""
     libero_datasets_dir = get_libero_path("datasets")
     if not os.path.exists(libero_datasets_dir):
@@ -88,10 +109,10 @@ def _discover_and_register_benchmarks():
     )
     for split_name in new_splits:
         _create_benchmark_class(split_name)
-        logging.debug(f"Registered benchmark: {split_name}")
+        logging.info(f"[Main Parallel] Registered benchmark: {split_name}")
 
-
-_discover_and_register_benchmarks()
+# HACK: removing this to get rid of warnings; bring back to register new environments (4/27/26) 
+# _discover_and_register_benchmarks() # doesn't do anything useful unless you use a new task; keep it around for new task definitoin 
 
 
 @dataclasses.dataclass
@@ -129,7 +150,7 @@ def _configure_worker_logging() -> None:
     ``WebsocketClientPolicy`` logs wait/retry messages at INFO; without this, workers look hung
     while they sleep in ``_wait_for_server`` (same loop as in the main process, but silent).
     """
-    logging.basicConfig(level=logging.INFO)
+    _configure_yellow_logging()
 
 
 def run_task(task_args: tuple) -> dict:
@@ -144,18 +165,19 @@ def run_task(task_args: tuple) -> dict:
 
 def _run_task_inner(task_id: int, args: Args, max_steps: int, run_dir: pathlib.Path) -> dict:
     np.random.seed(args.seed + task_id)
-
+    _yellow_print(f"[Main parallel] Using run dir: {run_dir}")
     # Each worker initializes its own task suite, env, and client
     benchmark_dict = benchmark.get_benchmark_dict()
     task_suite = benchmark_dict[args.task_suite_name]()
     task = task_suite.get_task(task_id)
     initial_states = task_suite.get_task_init_states(task_id)
     env, task_description = _get_libero_env(task, LIBERO_ENV_RESOLUTION, args.seed + task_id)
+    _yellow_print("[Main Parallel] Done making envs. You might pause a bit here as the client spins up.")
     client = _websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
+    _yellow_print("[Main Parallel] Done capturing the client")
 
     video_out_path = run_dir / "videos"
     task_episodes, task_successes = 0, 0
-    saved_success, saved_failure = False, False
 
     for episode_idx in range(args.num_trials_per_task):
         logging.info(f"[Task {task_id}] Episode {episode_idx + 1}/{args.num_trials_per_task}: {task_description}")
@@ -165,17 +187,17 @@ def _run_task_inner(task_id: int, args: Args, max_steps: int, run_dir: pathlib.P
         obs = env.set_init_state(initial_states[episode_idx])
 
         t = 0
-        need_video = not saved_success or not saved_failure
-        replay_images = [] if need_video else None
+        replay_images = []
         done = False
 
-        while t < max_steps + args.num_steps_wait:
+        from tqdm import trange
+
+        for t in trange(max_steps + args.num_steps_wait, desc=f"Task {task_id} ep {episode_idx} steps", position=task_id):
             try:
                 # IMPORTANT: Do nothing for the first few timesteps because the simulator drops objects
                 # and we need to wait for them to fall
                 if t < args.num_steps_wait:
                     obs, reward, done, info = env.step(LIBERO_DUMMY_ACTION)
-                    t += 1
                     continue
 
                 # Get preprocessed image
@@ -189,8 +211,7 @@ def _run_task_inner(task_id: int, args: Args, max_steps: int, run_dir: pathlib.P
                     image_tools.resize_with_pad(wrist_img, args.resize_size, args.resize_size)
                 )
 
-                if replay_images is not None:
-                    replay_images.append(img)
+                replay_images.append(img)
 
                 if not action_plan:
                     element = {
@@ -217,7 +238,9 @@ def _run_task_inner(task_id: int, args: Args, max_steps: int, run_dir: pathlib.P
                 if done:
                     task_successes += 1
                     break
-                t += 1
+            except Exception as e:
+                logging.error(f"[Task {task_id}] Caught exception: {e}")
+                break
 
             except Exception as e:
                 logging.error(f"[Task {task_id}] Caught exception: {e}")
@@ -225,23 +248,16 @@ def _run_task_inner(task_id: int, args: Args, max_steps: int, run_dir: pathlib.P
 
         task_episodes += 1
 
-        # Save at most one success and one failure video per task
-        if replay_images is not None:
+        # Save one video per episode (named by task, episode index, and outcome)
+        if replay_images:
             task_segment = task_description.replace(" ", "_")
-            if done and not saved_success:
-                imageio.mimwrite(
-                    video_out_path / f"task{task_id:02d}_{task_segment}_success.mp4",
-                    [np.asarray(x[:, ::-1]) for x in replay_images],
-                    fps=20,
-                )
-                saved_success = True
-            elif not done and not saved_failure:
-                imageio.mimwrite(
-                    video_out_path / f"task{task_id:02d}_{task_segment}_failure.mp4",
-                    [np.asarray(x[:, ::-1]) for x in replay_images],
-                    fps=20,
-                )
-                saved_failure = True
+            outcome = "success" if done else "failure"
+            imageio.mimwrite(
+                video_out_path
+                / f"task{task_id:02d}_ep{episode_idx:03d}_{task_segment}_{outcome}.mp4",
+                [np.asarray(x[:, ::-1]) for x in replay_images],
+                fps=20,
+            )
 
         logging.info(f"[Task {task_id}] Episode {episode_idx + 1}: {'success' if done else 'failure'}")
 
@@ -277,7 +293,7 @@ def eval_suite(args: Args, task_suite_name: str, run_dir: pathlib.Path) -> dict:
 
     num_workers = min(args.num_workers, num_tasks)
     logging.info(f"Running {num_tasks} tasks with {num_workers} workers")
-
+    logging.info("[main parallel] Setting off eval processes")
     ctx = multiprocessing.get_context("spawn")
     with ctx.Pool(processes=num_workers, initializer=_configure_worker_logging) as pool:
         per_task_stats = list(
@@ -313,7 +329,7 @@ def eval_libero(args: Args) -> None:
     runs_root = (base / args.out_path) if base else pathlib.Path(args.out_path)
     run_dir = runs_root / folder_name
     run_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n{'='*60}\nRun directory: {run_dir }\n{'='*60}\n")
+    _yellow_print(f"\n{'='*60}\nRun directory: {run_dir }\n{'='*60}\n")
 
     suite_run_dir = run_dir / args.task_suite_name
     eval_suite(args, args.task_suite_name, suite_run_dir)
@@ -348,5 +364,5 @@ def _quat2axisangle(quat):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    _configure_yellow_logging()
     tyro.cli(eval_libero)
